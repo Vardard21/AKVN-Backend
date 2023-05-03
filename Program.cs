@@ -14,8 +14,6 @@ namespace AKVN_Backend
         public static void Main(string[] args)
         {
 
-            
-
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -46,5 +44,7 @@ namespace AKVN_Backend
 
             app.Run();
         }
-    }
+
+
+     }
 }
