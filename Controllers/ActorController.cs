@@ -27,17 +27,22 @@ namespace AKVN_Backend.Controllers
             string Arknightswiki = "https://arknights.fandom.com/wiki/";
 
 
+
             foreach (string StoryNode in StoryNodes)
             {
                 Actors = GetActors(Arknightswiki + StoryNode + "/Story");
+                Actors.Add(new Actor("Empty", ""));
+                Actors.Add(new Actor("???", ""));
 
                 foreach (Actor actor in Actors)
                 {
-                    if (_context.Actors.Any(o => o.Name == actor.Name))
+                    if (actor.Name.Contains(" (NPC)"))
                     {
+                        actor.Name = actor.Name.Substring(0, actor.Name.IndexOf(" (NPC)"));
                     }
-                    else
-                    {
+
+                    if (!_context.Actors.Any(o => o.Name == actor.Name))
+                       {
                         _context.Add(actor);
                         await _context.SaveChangesAsync();
                     }
@@ -129,5 +134,6 @@ namespace AKVN_Backend.Controllers
             }
             return Characters;
         }
+
     }
 }

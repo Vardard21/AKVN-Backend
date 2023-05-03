@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AKVN_Backend.Migrations
 {
     [DbContext(typeof(AKVNDBContext))]
-    [Migration("20230502195610_Backgrounds")]
-    partial class Backgrounds
+    [Migration("20230503113233_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -30,16 +30,11 @@ namespace AKVN_Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("SceneId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Sprite")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SceneId");
 
                     b.ToTable("Actors");
                 });
@@ -84,84 +79,43 @@ namespace AKVN_Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ChapterId")
+                    b.Property<int>("ActorId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChapterId");
-
-                    b.ToTable("Scenes");
-                });
-
-            modelBuilder.Entity("AKVN_Backend.Classes.Text", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int?>("ChapterId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Dialogue")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("SceneId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("ActorId");
 
-                    b.HasIndex("SceneId");
+                    b.HasIndex("ChapterId");
 
-                    b.ToTable("Texts");
-                });
-
-            modelBuilder.Entity("AKVN_Backend.Classes.Actor", b =>
-                {
-                    b.HasOne("AKVN_Backend.Classes.Scene", null)
-                        .WithMany("Actors")
-                        .HasForeignKey("SceneId");
+                    b.ToTable("Scenes");
                 });
 
             modelBuilder.Entity("AKVN_Backend.Classes.Scene", b =>
                 {
-                    b.HasOne("AKVN_Backend.Classes.Chapter", null)
-                        .WithMany("Scenes")
-                        .HasForeignKey("ChapterId");
-                });
-
-            modelBuilder.Entity("AKVN_Backend.Classes.Text", b =>
-                {
-                    b.HasOne("AKVN_Backend.Classes.Actor", "Owner")
+                    b.HasOne("AKVN_Backend.Classes.Actor", "Actor")
                         .WithMany()
-                        .HasForeignKey("OwnerId")
+                        .HasForeignKey("ActorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AKVN_Backend.Classes.Scene", null)
-                        .WithMany("Texts")
-                        .HasForeignKey("SceneId");
+                    b.HasOne("AKVN_Backend.Classes.Chapter", null)
+                        .WithMany("Scenes")
+                        .HasForeignKey("ChapterId");
 
-                    b.Navigation("Owner");
+                    b.Navigation("Actor");
                 });
 
             modelBuilder.Entity("AKVN_Backend.Classes.Chapter", b =>
                 {
                     b.Navigation("Scenes");
-                });
-
-            modelBuilder.Entity("AKVN_Backend.Classes.Scene", b =>
-                {
-                    b.Navigation("Actors");
-
-                    b.Navigation("Texts");
                 });
 #pragma warning restore 612, 618
         }

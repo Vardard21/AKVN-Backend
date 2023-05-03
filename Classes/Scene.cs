@@ -5,21 +5,21 @@ namespace AKVN_Backend.Classes
     public class Scene 
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public List<Actor> Actors { get; set; }
-        public List<Text> Texts { get; set; }
 
-        public Scene(string name, List<Actor> actors, List<Text> text) 
+        public Actor Actor { get; set; }
+        public string Dialogue { get; set; }
+
+        public Scene( Actor actor, string text) 
         {
-            Name = name;
-            Actors = actors;
-            Texts = text;
+
+            Actor = actor;
+            Dialogue = text;
         }
         public Scene()
         {
-            Name = string.Empty;
-            Actors = new List<Actor>();
-            Texts = new List<Text>();
+
+            Actor = new Actor();
+            Dialogue = string.Empty;
         }
 
     }

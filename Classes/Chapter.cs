@@ -11,6 +11,11 @@
             Name = name;
             Scenes = scenes;
         }
+        public Chapter(string name)
+        {
+            Name = name;
+            Scenes= new List<Scene>();
+        }
 
         public Chapter() 
         {

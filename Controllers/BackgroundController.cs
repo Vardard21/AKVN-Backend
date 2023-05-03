@@ -37,10 +37,6 @@ namespace AKVN_Backend.Controllers
                         _context.Add(background);
                         await _context.SaveChangesAsync();
                     }
-                    else
-                    {
-
-                    }
                 }
             }
            
