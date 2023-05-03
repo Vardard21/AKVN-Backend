@@ -6,18 +6,16 @@ namespace AKVN_Backend.Classes
     {
         public int Id { get; set; }
         public string Dialogue { get; set; }
-        public Actor Owner { get; set; }
 
-        public Text(string dialogue, Actor owner)
+        public Text(string dialogue)
         {
 
             Dialogue = dialogue;
-            Owner = owner;
+
         }
         public Text() 
         {
             Dialogue = string.Empty;
-            Owner = new Actor();
 
         }
     }

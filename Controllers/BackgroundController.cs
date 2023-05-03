@@ -3,6 +3,7 @@ using AKVN_Backend.Data;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace AKVN_Backend.Controllers
@@ -56,35 +57,45 @@ namespace AKVN_Backend.Controllers
 
         static List<Background> GetBackgrounds(string url)
         {
+            //Download the htmlpage to parse
             HtmlDocument doc = GetDocument(url);
-            string XPath = "//*[@id='mw-content-text']/div[1]/table[2]/tbody/tr[4]/td";
+  
+
+            HtmlNode BackgroundTable = doc.DocumentNode.SelectSingleNode("//*[@class='mrfz-btable']/tbody/tr[4]/td");
+
+            //Create a list to return
             List<Background> Backgrounds = new List<Background>();
 
-            if (doc.DocumentNode.SelectSingleNode(XPath) != null)
+            //Select the body of the Background table
+
+            if (BackgroundTable != null)
             {
-                if (doc.DocumentNode.SelectSingleNode(XPath).InnerText == "Backgrounds\n")
+                if (BackgroundTable.InnerText == "Backgrounds\n")
                 {
-                    XPath = "//*[@id='mw-content-text']/div[1]/table[2]/tbody/tr[5]/td";
+                    BackgroundTable = doc.DocumentNode.SelectSingleNode("//*[@class='mrfz-btable']/tbody/tr[5]/td");
                 }
-                HtmlNode BackgroundTable = doc.DocumentNode.SelectSingleNode(XPath);
 
-                int BackgroundAmounts = BackgroundTable.ChildNodes.Count / 2;
 
-                for (int i = 0; i < (BackgroundAmounts); i++)
+
+                foreach (HtmlNode child in  BackgroundTable.ChildNodes)
                 {
-                string relativeXPath = $"/div[{i + 1}]/div[1]";
-                string fullXPath = XPath + relativeXPath;
-                string name;
-                string imagePath;
-                string imagePathFull;
+                    if (child.Name == "div")
+                    {
+                        string relativeXPath = "/div[1]";
+                        string fullXPath = child.XPath + relativeXPath;
+                        string name;
+                        string imagePath;
+                        string imagePathFull;
 
-                imagePathFull = doc.DocumentNode.SelectSingleNode(fullXPath + "/div[1]/a").Attributes["href"].Value.ToString();
-                imagePath = imagePathFull.Substring(0, imagePathFull.IndexOf(".png") + ".png".Length);
-                int pathStart = imagePath.IndexOf("Background-");
-                int pathEnd = imagePathFull.IndexOf(".png");
-                name = imagePath.Substring(pathStart, pathEnd - pathStart);
-                Backgrounds.Add(new Background(name, imagePath));
+                        imagePathFull = doc.DocumentNode.SelectSingleNode(fullXPath + "/div[1]/a").Attributes["href"].Value.ToString();
+                        imagePath = imagePathFull.Substring(0, imagePathFull.IndexOf(".png") + ".png".Length);
+                        int pathStart = imagePath.IndexOf("Background-");
+                        int pathEnd = imagePathFull.IndexOf(".png");
+                        name = imagePath.Substring(pathStart, pathEnd - pathStart);
+                        Backgrounds.Add(new Background(name, imagePath));
+                    }
                 }
+
             }
             return Backgrounds;
         }

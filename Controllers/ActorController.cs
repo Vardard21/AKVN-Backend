@@ -85,37 +85,46 @@ namespace AKVN_Backend.Controllers
         {
             HtmlDocument doc = GetDocument(url);
             List<Actor> Characters = new List<Actor>();
-            string XPath = "//*[@id='mw-content-text']/div[1]/table[2]/tbody/tr[2]/td";
+            string XPath = "//*[@class='mrfz-btable']/tbody/tr[2]/td";
             if (doc.DocumentNode.SelectSingleNode(XPath) != null)
             {
                 if (doc.DocumentNode.SelectSingleNode(XPath).InnerText == "Characters\n")
                 {
-                    XPath = "//*[@id='mw-content-text']/div[1]/table[2]/tbody/tr[3]/td";
+                    XPath = "//*[@class='mrfz-btable']/tbody/tr[3]/td";
                 }
                 HtmlNode CharTable = doc.DocumentNode.SelectSingleNode(XPath);
+                int CharAmounts = CharTable.ChildNodes.Count / 2;
 
-
-                for (int i = 0; i < (CharTable.ChildNodes.Count / 2); i++)
+                foreach (HtmlNode child in CharTable.ChildNodes)
                 {
-                    string relativeXPath = $"/div[{i + 1}]/div[2]/a";
-                    string fullXPath = XPath + relativeXPath;
+                    if (child.Name == "div")
+                    {
+                        string relativeXPath = $"/div[2]/a";
+                        string fullXPath = child.XPath + relativeXPath;
 
-                    string name;
-                    string imagePath;
-                    if (doc.DocumentNode.SelectSingleNode(fullXPath) != null)
-                    {
-                        name = doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString();
-                        string webPage = url.Substring(0, url.IndexOf("/wiki") + "/wiki".Length) + "/" + (doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString());
-                        imagePath = GetImagePath(webPage);
+                        string name;
+                        string imagePath;
+                        if (doc.DocumentNode.SelectSingleNode(fullXPath) != null)
+                        {
+                            name = doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString();
+                            string webPage = url.Substring(0, url.IndexOf("/wiki") + "/wiki".Length) + "/" + (doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString());
+                            imagePath = GetImagePath(webPage);
+                        }
+                        else
+                        {
+                            relativeXPath = $"/div[2]";
+                            fullXPath = child.XPath + relativeXPath;
+                            name = doc.DocumentNode.SelectSingleNode(fullXPath).InnerText.ToString();
+                            imagePath = "";
+                        }
+                        Characters.Add(new Actor(name, imagePath));
                     }
-                    else
-                    {
-                        relativeXPath = $"/div[{i + 1}]/div[2]";
-                        fullXPath = XPath + relativeXPath;
-                        name = doc.DocumentNode.SelectSingleNode(fullXPath).InnerText.ToString();
-                        imagePath = "";
-                    }
-                    Characters.Add(new Actor(name, imagePath));
+                }
+
+
+                for (int i = 0; i < CharAmounts; i++)
+                {
+                    
                 }
             }
             return Characters;
