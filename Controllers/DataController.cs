@@ -22,21 +22,21 @@ namespace AKVN_Backend.Controllers
 
 
         [HttpGet]
-        public Response<ChapterDTO> GetChapterByID()
+        public Response<ChapterDTO> GetChapterByID(string name)
         {
-            string name = "1-5";
+
             //Generate Response.
             Response<ChapterDTO> response = new Response<ChapterDTO>();
 
             //Generate DTO to return.
             ChapterDTO chapterDTO = new ChapterDTO();
-
-            //Lookup chapter according to chapter name.
-            Chapter chapter =_context.Chapters.Where(o=>o.Name==name).First();
-
-            chapterDTO.Name = chapter.Name;
             try
             {
+                //Lookup chapter according to chapter name.
+                Chapter chapter = _context.Chapters.Where(o => o.Name == name).First();
+
+                chapterDTO.Name = chapter.Name;
+
                 //Look for each actor that appears in the chapter.
                 List<Actor> Actors = new List<Actor>();
                 if (chapter.Actors != "No Actors")
@@ -81,12 +81,9 @@ namespace AKVN_Backend.Controllers
                     }
                 }
 
-
-
-
                 //Look for each Scene that appears in the chapter.
                 List<Scene> Scenes = new List<Scene>();
-                if (chapter.SceneList!="No Scenes")
+                if (chapter.SceneList != "No Scenes")
                 {
                     string[] ScenelistString = chapter.SceneList.Split(",");
                     List<int> SceneIds = new List<int>();
@@ -101,7 +98,7 @@ namespace AKVN_Backend.Controllers
                         Scenes.Add(scene);
                     }
                 }
-              
+
 
                 chapterDTO.Actors = Actors;
                 chapterDTO.Backgrounds = Backgrounds;
@@ -109,7 +106,7 @@ namespace AKVN_Backend.Controllers
                 response.Data = chapterDTO;
                 response.Success = true;
             }
-            catch 
+            catch
             {
 
                 response.RequestError();
