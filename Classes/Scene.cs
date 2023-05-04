@@ -6,20 +6,22 @@ namespace AKVN_Backend.Classes
     {
         public int Id { get; set; }
 
-        public Actor Actor { get; set; }
+        public string ActorName { get; set; }
+        public int ActorId { get; set; }
         public string Dialogue { get; set; }
 
-        public Scene( Actor actor, string text) 
+        public Scene( string actorName, string text,int actorId) 
         {
 
-            Actor = actor;
+            ActorName = actorName;
             Dialogue = text;
+            ActorId = actorId;
         }
         public Scene()
         {
-
-            Actor = new Actor();
+            ActorName = string.Empty;
             Dialogue = string.Empty;
+            ActorId = 0;
         }
 
     }

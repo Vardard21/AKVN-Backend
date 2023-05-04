@@ -5,7 +5,7 @@
 namespace AKVN_Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class RationalizeDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -44,7 +44,10 @@ namespace AKVN_Backend.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false)
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Backgrounds = table.Column<string>(type: "TEXT", nullable: false),
+                    Actors = table.Column<string>(type: "TEXT", nullable: false),
+                    SceneList = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -57,51 +60,30 @@ namespace AKVN_Backend.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    ActorName = table.Column<string>(type: "TEXT", nullable: false),
                     ActorId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Dialogue = table.Column<string>(type: "TEXT", nullable: false),
-                    ChapterId = table.Column<int>(type: "INTEGER", nullable: true)
+                    Dialogue = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Scenes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Scenes_Actors_ActorId",
-                        column: x => x.ActorId,
-                        principalTable: "Actors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Scenes_Chapters_ChapterId",
-                        column: x => x.ChapterId,
-                        principalTable: "Chapters",
-                        principalColumn: "Id");
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Scenes_ActorId",
-                table: "Scenes",
-                column: "ActorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Scenes_ChapterId",
-                table: "Scenes",
-                column: "ChapterId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Backgrounds");
-
-            migrationBuilder.DropTable(
-                name: "Scenes");
-
-            migrationBuilder.DropTable(
                 name: "Actors");
 
             migrationBuilder.DropTable(
+                name: "Backgrounds");
+
+            migrationBuilder.DropTable(
                 name: "Chapters");
+
+            migrationBuilder.DropTable(
+                name: "Scenes");
         }
     }
 }

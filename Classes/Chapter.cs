@@ -4,23 +4,32 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public List<Scene> Scenes { get; set; }
+        public string Backgrounds { get; set; }
+        public string Actors { get; set; }
+        public string SceneList { get; set; }
 
-        public Chapter(string name, List<Scene> scenes) 
+        public Chapter(string name, string backgrounds, string actors, string scenes)
         {
             Name = name;
-            Scenes = scenes;
+            Backgrounds = backgrounds;
+            Actors = actors;
+            SceneList = scenes;
         }
-        public Chapter(string name)
+
+        public Chapter(string name) 
         {
             Name = name;
-            Scenes= new List<Scene>();
+            Backgrounds = string.Empty;
+            Actors = string.Empty;
+            SceneList = string.Empty;
         }
 
         public Chapter() 
         {
             Name = string.Empty;
-            Scenes = new List<Scene>();
+            Backgrounds = string.Empty;
+            Actors = string.Empty;
+            SceneList = string.Empty;
         }
     }
 }
