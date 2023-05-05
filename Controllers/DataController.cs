@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.CodeDom;
 using System.Security.AccessControl;
 using AKVN_Backend.Classes.DTO;
+using System.Net;
+using Microsoft.AspNetCore.Routing.Constraints;
+using System.IO;
 
 namespace AKVN_Backend.Controllers
 {
@@ -113,7 +116,42 @@ namespace AKVN_Backend.Controllers
             }
             
             return response;
-        } 
+        }
+
+
+        [HttpGet("/api/Images")]
+        public async Task<Response<ImageDTO>> DownloadImages()
+        {
+            Response<ImageDTO> response = new Response<ImageDTO>();
+            List<Actor> Actors = _context.Actors.Where(a => a.Sprite != "").ToList();
+            HttpClient client = new HttpClient();
+            List<string>imagesNew = new List<string>();
+            List<string>imagesExist = new List<string>();
+
+            foreach (Actor actor in Actors)
+            {
+                string url = actor.Sprite;
+                string fileName = Path.GetFileName(url);
+                string path = Path.Combine(Environment.CurrentDirectory, @"Data\Images", fileName);
+                if(!System.IO.File.Exists(path)) 
+                {
+                    var httpResult = client.GetAsync(url).Result;
+                    using var resultStream = await httpResult.Content.ReadAsStreamAsync();
+                    using var fileStream = System.IO.File.Create(path);
+                    resultStream.CopyTo(fileStream);
+                    imagesNew.Add(fileName);
+                }
+                else
+                {
+                    imagesExist.Add(fileName);
+                }
+
+  
+            }
+            response.Data.ImagesOld = imagesExist;
+            response.Data.ImagesNew = imagesNew;
+            return response;
+        }
 
         [HttpPost]
         public async Task<ActionResult<Object>> UpdateData()
