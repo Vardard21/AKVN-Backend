@@ -9,6 +9,7 @@ using AKVN_Backend.Classes.DTO;
 using System.Net;
 using Microsoft.AspNetCore.Routing.Constraints;
 using System.IO;
+using System.Text;
 
 namespace AKVN_Backend.Controllers
 {
@@ -101,8 +102,6 @@ namespace AKVN_Backend.Controllers
                         Scenes.Add(scene);
                     }
                 }
-
-
                 chapterDTO.Actors = Actors;
                 chapterDTO.Backgrounds = Backgrounds;
                 chapterDTO.Scenes = Scenes;
@@ -111,46 +110,67 @@ namespace AKVN_Backend.Controllers
             }
             catch
             {
-
                 response.RequestError();
-            }
-            
+            }            
             return response;
         }
 
-
-        [HttpGet("/api/Images")]
-        public async Task<Response<ImageDTO>> DownloadImages()
+        [HttpGet("/api/Images/Characters")]
+        public async Task<Response<ImageDTO>> DownloadCharacterImages()
         {
             Response<ImageDTO> response = new Response<ImageDTO>();
             List<Actor> Actors = _context.Actors.Where(a => a.Sprite != "").ToList();
             HttpClient client = new HttpClient();
-            List<string>imagesNew = new List<string>();
-            List<string>imagesExist = new List<string>();
-
+            List<string> urls = new List<string>();
             foreach (Actor actor in Actors)
             {
-                string url = actor.Sprite;
-                string fileName = Path.GetFileName(url);
-                string path = Path.Combine(Environment.CurrentDirectory, @"Data\Images", fileName);
-                if(!System.IO.File.Exists(path)) 
-                {
-                    var httpResult = client.GetAsync(url).Result;
-                    using var resultStream = await httpResult.Content.ReadAsStreamAsync();
-                    using var fileStream = System.IO.File.Create(path);
-                    resultStream.CopyTo(fileStream);
-                    imagesNew.Add(fileName);
-                }
-                else
-                {
-                    imagesExist.Add(fileName);
-                }
-
-  
+                urls.Add(actor.Sprite);
             }
-            response.Data.ImagesOld = imagesExist;
-            response.Data.ImagesNew = imagesNew;
+            var returnObj=DownloadImages(urls,@"Data\Images\Characters" ,client);
+
+            response.Data.ImagesOld = returnObj.Result.ImagesOld;
+            response.Data.ImagesNew = returnObj.Result.ImagesNew;
             return response;
+        }
+
+        [HttpGet("/api/Images/Backgrounds")]
+        public async Task<Response<ImageDTO>> DownloadBackgroundImages()
+        {
+            Response<ImageDTO> response = new Response<ImageDTO>();
+            List<Background> Backgrounds = _context.Backgrounds.Where(a => a.Sprite != "").ToList();
+            HttpClient client = new HttpClient();
+            List<string> urls = new List<string>();
+            foreach (Background background in Backgrounds)
+            {
+                urls.Add(background.Sprite);
+            }
+            var returnObj = DownloadImages(urls, @"Data\Images\Backgrounds", client);
+
+            response.Data.ImagesOld = returnObj.Result.ImagesOld;
+            response.Data.ImagesNew = returnObj.Result.ImagesNew;
+            return response;
+        }
+
+        [HttpGet("/api/Images/Characters/renpy")]
+        public Response<string> CreateRenpyCharacters()
+        {
+            Response<string> response= new Response<string>();
+
+            List<Actor> actors = _context.Actors.Where(o => o.Name != "").ToList();
+            List<string> actorNames= new List<string>();
+            StringBuilder pythonScript = new StringBuilder();
+
+            foreach (Actor actor in actors)
+            {
+                pythonScript.AppendLine(CreateRenpyChar(actor));
+            }
+
+            System.IO.File.WriteAllText(@"Data\charscript.py",pythonScript.ToString());
+            
+            
+            response.Data = "Script generated";
+            return response;
+
         }
 
         [HttpPost]
@@ -270,7 +290,6 @@ namespace AKVN_Backend.Controllers
             }
             return Ok(obj);
         }
-
 
         static HtmlDocument GetDocument(string url)
         {
@@ -545,5 +564,47 @@ namespace AKVN_Backend.Controllers
             string ImagePath = ImagePathFull.Substring(0, ImagePathFull.IndexOf(PngExtention) + PngExtention.Length);
             return ImagePath;
         }
+        async Task<ImageDTO> DownloadImages(List<string> urls,string imageDirectory,HttpClient client)
+        {
+            List<string>imagesNew= new List<string>();
+            List<string> imagesOld= new List<string>();
+            ImageDTO returnDTO = new ImageDTO();
+            foreach (string url in urls)
+            {
+                string fileName = Path.GetFileName(url);
+                string path = Path.Combine(Environment.CurrentDirectory, imageDirectory, fileName);
+                if (!System.IO.File.Exists(path))
+                {
+                    var httpResult = client.GetAsync(url).Result;
+                    using var resultStream = await httpResult.Content.ReadAsStreamAsync();
+                    using var fileStream = System.IO.File.Create(path);
+                    resultStream.CopyTo(fileStream);
+                    imagesNew.Add(fileName);
+                }
+                else
+                {
+                    imagesOld.Add(fileName);
+                }
+            }
+            returnDTO.ImagesNew= imagesNew;
+            returnDTO.ImagesOld= imagesOld;
+            return returnDTO;
+           
+
+        }
+        static string CreateRenpyChar(Actor actor)
+        {
+            StringBuilder pythonScript= new StringBuilder();
+            string name = actor.Name;
+            pythonScript.AppendLine($"image {name}Image:");
+            pythonScript.Append("    ");
+            pythonScript.AppendLine($"'images/Characters/{name}.png' ");
+            pythonScript.Append("    ");
+            pythonScript.AppendLine("zoom 0.65 ");
+            pythonScript.AppendLine($"define {name}=Character('{name}')");
+
+            return pythonScript.ToString();
+        }
+
     }
 }
