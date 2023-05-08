@@ -10,6 +10,11 @@ using System.Net;
 using Microsoft.AspNetCore.Routing.Constraints;
 using System.IO;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using System.Runtime.ExceptionServices;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace AKVN_Backend.Controllers
 {
@@ -180,116 +185,161 @@ namespace AKVN_Backend.Controllers
             string Arknightswiki = "https://arknights.fandom.com/wiki/";
             string storyType = "Story/Main_Theme";
 
-            List<Chapter> StoryNodes = GetChapters(Arknightswiki + storyType);
-//           List<Chapter> StoryNodes=new List<Chapter> {new Chapter("1-5") };
+            List<List<Chapter>> Episodes = GetChapters(Arknightswiki + storyType);
+            
 
-            foreach (Chapter chapter in StoryNodes)
+
+            foreach (List<Chapter> StoryNodes in Episodes)
             {
-                if (!_context.Chapters.Any(o => o.Name == chapter.Name)) 
+                foreach (Chapter chapter in StoryNodes)
                 {
-                    string storyNode = chapter.Name;
-                    HtmlDocument doc = GetDocument(Arknightswiki + storyNode + "/Story");
-                    List<Actor> Actors = GetActors(Arknightswiki + storyNode + "/Story",doc);
-                    Actors.Add(new Actor("Empty", ""));
-                    Actors.Add(new Actor("???", ""));
-                    List<int> ActorNames = new List<int>();
-                    List<int> BackgroundNames = new List<int>();
-                    List<int> SceneList = new List<int>();
-
-                    foreach (Actor actor in Actors)
-                    {
-                        if (!_context.Actors.Any(o => o.Name.StartsWith(actor.Name)))
-                        {
-                            _context.Add(actor);
-                            await _context.SaveChangesAsync();
-                        }
-                        int ActorId = _context.Actors.Where(o => o.Name.Contains(actor.Name)).First().Id;
-                        ActorNames.Add(ActorId);
-                    }
-
-                    List<Background> Backgrounds = GetBackgrounds(Arknightswiki + storyNode + "/Story", doc);
-
-                    foreach (var background in Backgrounds)
-                    {
-                        if (!_context.Backgrounds.Any(o => o.Name==background.Name))
-                        {
-                            _context.Add(background);
-                            await _context.SaveChangesAsync();
-                        }
-                        int BackgroundId = _context.Backgrounds.Where(o => o.Name == background.Name).First().Id;
-                        BackgroundNames.Add(BackgroundId);
-                    }
-
-                    List<Scene> Scenes = GetScenes(Arknightswiki + storyNode + "/Story", _context, chapter.Name,doc);
-                    foreach (var scene in Scenes)
-                    {
-                        if (!_context.Scenes.Any(o => o.Dialogue == scene.Dialogue))
-                        {
-                            _context.Add(scene);
-                            await _context.SaveChangesAsync();
-                        }
-                        int SceneID = _context.Scenes.Where(o => o.Dialogue == scene.Dialogue).First().Id;
-                        int ActorID = _context.Scenes.Where(o => o.Dialogue == scene.Dialogue).First().ActorId;
-                        SceneList.Add(SceneID);
-                        if (!ActorNames.Contains(ActorID))
-                        {
-                            ActorNames.Add(ActorID);
-                        }
-
-                    }
-                    if (ActorNames.Count > 0)
-                    {
-                        string ActorNamesString = string.Empty;
-                        foreach (int a in ActorNames)
-                        {
-                            ActorNamesString += a.ToString() + ",";
-                        }
-                        chapter.Actors = ActorNamesString.Remove(ActorNamesString.Length - 1);
-                    }
-                    else
-                    {
-                        chapter.Actors = "No Actors";
-                    }
-
-
-                    if (BackgroundNames.Count > 0)
-                    {
-                        string BackgroundNamesString = string.Empty;
-                        foreach (int b in BackgroundNames)
-                        {
-                            BackgroundNamesString += b.ToString() + ",";
-                        }
-                        chapter.Backgrounds = BackgroundNamesString.Remove(BackgroundNamesString.Length - 1);
-                    }
-                    else
-                    {
-                        chapter.Backgrounds = "No Backgrounds";
-
-                    }
-                    if (Scenes.Count > 0)
-                    {
-                        string SceneListString = string.Empty;
-                        foreach (int s in SceneList)
-                        {
-                            SceneListString += s.ToString() + ",";
-                        }
-                        chapter.SceneList = SceneListString.Remove(SceneListString.Length - 1);
-                    }
-                    else
-                    {
-                        chapter.SceneList = "No Scenes";
-                    }
-
                     if (!_context.Chapters.Any(o => o.Name == chapter.Name))
                     {
-                        _context.Add(chapter);
-                        await _context.SaveChangesAsync();
+                        string storyNode = chapter.Name;
+                        HtmlDocument doc = GetDocument(Arknightswiki + storyNode + "/Story");
+                        List<Actor> Actors = GetActors(Arknightswiki + storyNode + "/Story", doc);
+                        Actors.Add(new Actor("Empty", ""));
+                        Actors.Add(new Actor("???", ""));
+                        List<int> ActorNames = new List<int>();
+                        List<int> BackgroundNames = new List<int>();
+                        List<int> SceneList = new List<int>();
+
+                        foreach (Actor actor in Actors)
+                        {
+                            int ActorId = AddActor(actor, _context);
+                            ActorNames.Add(ActorId);
+                        }
+
+                        List<Background> Backgrounds = GetBackgrounds(Arknightswiki + storyNode + "/Story", doc);
+
+                        foreach (var background in Backgrounds)
+                        {
+                            if (!_context.Backgrounds.Any(o => o.Name == background.Name))
+                            {
+                                _context.Add(background);
+                                await _context.SaveChangesAsync();
+                            }
+                            int BackgroundId = _context.Backgrounds.Where(o => o.Name == background.Name).First().Id;
+                            BackgroundNames.Add(BackgroundId);
+                        }
+
+                        List<Scene> Scenes = GetScenes(Arknightswiki + storyNode + "/Story", _context, chapter.Name, doc);
+                        foreach (var scene in Scenes)
+                        {
+                            if (!_context.Scenes.Any(o => o.Dialogue == scene.Dialogue))
+                            {
+                                _context.Add(scene);
+                                await _context.SaveChangesAsync();
+                            }
+                            int SceneID = _context.Scenes.Where(o => o.Dialogue == scene.Dialogue).First().Id;
+                            int ActorID = _context.Scenes.Where(o => o.Dialogue == scene.Dialogue).First().ActorId;
+                            SceneList.Add(SceneID);
+                            if (!ActorNames.Contains(ActorID))
+                            {
+                                ActorNames.Add(ActorID);
+                            }
+
+                        }
+                        if (ActorNames.Count > 0)
+                        {
+                            string ActorNamesString = string.Empty;
+                            foreach (int a in ActorNames)
+                            {
+                                ActorNamesString += a.ToString() + ",";
+                            }
+                            chapter.Actors = ActorNamesString.Remove(ActorNamesString.Length - 1);
+                        }
+                        else
+                        {
+                            chapter.Actors = "No Actors";
+                        }
+
+
+                        if (BackgroundNames.Count > 0)
+                        {
+                            string BackgroundNamesString = string.Empty;
+                            foreach (int b in BackgroundNames)
+                            {
+                                BackgroundNamesString += b.ToString() + ",";
+                            }
+                            chapter.Backgrounds = BackgroundNamesString.Remove(BackgroundNamesString.Length - 1);
+                        }
+                        else
+                        {
+                            chapter.Backgrounds = "No Backgrounds";
+
+                        }
+                        if (Scenes.Count > 0)
+                        {
+                            string SceneListString = string.Empty;
+                            foreach (int s in SceneList)
+                            {
+                                SceneListString += s.ToString() + ",";
+                            }
+                            chapter.SceneList = SceneListString.Remove(SceneListString.Length - 1);
+                        }
+                        else
+                        {
+                            chapter.SceneList = "No Scenes";
+                        }
+
+                        if (!_context.Chapters.Any(o => o.Name == chapter.Name))
+                        {
+                            _context.Add(chapter);
+                            await _context.SaveChangesAsync();
+                        }
                     }
+
                 }
-                
             }
+            
             return Ok(obj);
         }
+
+
+        [HttpPost("/api/Images/Characters")]
+        public async Task<Response<string>> GetCharacterSprites()
+        {
+            string aceshipjson = "https://raw.githubusercontent.com/Aceship/AN-EN-Tags/master/json/ace/gallerylist.json";
+            Response<string> response  = new Response<string>();
+            List<int> chars= new List<int> {1,2,3,4,5,6,7,8,9,10};
+            HttpClient client = new HttpClient();
+            Stream stream = await client.GetStreamAsync(aceshipjson);
+            string jsonFileName = @"Data\aceshipjson.json";
+            var file = new FileStream(jsonFileName, FileMode.Create);
+            await stream.CopyToAsync(file);
+            file.Close();
+
+
+            string jsonData=System.IO.File.ReadAllText(jsonFileName);
+            JsonObject jsonItems = JsonConvert.DeserializeObject<JsonObject>(jsonData);
+
+            List<Actor> actors = _context.Actors.ToList();
+            List<List<CharacterSprite>>spriteList= new List<List<CharacterSprite>>();
+            
+            foreach (Actor actor in actors)
+            {
+                List<CharacterSprite> sprites= new List<CharacterSprite>();
+                foreach (string character in jsonItems.characters)
+                {
+                    if (character.Contains(actor.Name.ToLower()))
+                    {
+                        CharacterSprite characterSprite = new CharacterSprite(character, actor.Name);
+                        sprites.Add(characterSprite);
+                        if (!_context.Sprites.Any(o=>o.Name== characterSprite.Name&&o.ImagePath==characterSprite.ImagePath))
+                        {
+                            _context.Sprites.Add(characterSprite);
+                            
+                        }
+
+                    }
+                }
+                spriteList.Add(sprites);
+            }
+            _context.SaveChanges();
+            return response;
+        }
+
 
         static HtmlDocument GetDocument(string url)
         {
@@ -298,9 +348,10 @@ namespace AKVN_Backend.Controllers
             HtmlDocument doc = web.Load(url);
             return doc;
         }
-        static List<Chapter> GetChapters(string url)
+        static List<List<Chapter>> GetChapters(string url)
         {
             //Create a list to return
+            List<List<Chapter>> episodes= new List<List<Chapter>>();
             List<Chapter> chapters = new List<Chapter>();
 
             //Download the htmlpage to parse
@@ -311,18 +362,20 @@ namespace AKVN_Backend.Controllers
             foreach (HtmlNode episode in Episodes)
             {
                 HtmlNodeCollection StoryNodes = episode.ChildNodes;
+                string episodename= doc.DocumentNode.SelectSingleNode(episode.ParentNode.XPath.ToString() + "/th/div").InnerText.ToString();
 
                 //Cycle through each storynode and make a new chapter object out of it.
                 foreach (HtmlNode storyNode in StoryNodes)
                 {
                     if (storyNode.Name == "a")
                     {
-                        Chapter chapter = new Chapter(storyNode.InnerText);
+                        Chapter chapter = new Chapter(storyNode.InnerText,episodename);
                         chapters.Add(chapter);
                     }
                 }
+                episodes.Add(chapters);
             }
-            return chapters;
+            return episodes;
         }
         static List<Scene> GetScenes(string url, AKVNDBContext _context, string storyNode,HtmlDocument doc)
         {
@@ -368,7 +421,8 @@ namespace AKVN_Backend.Controllers
                                 Actor owner = new Actor();
                                 HtmlNode node = child.SelectSingleNode(child.XPath + "/th");
                                 bool check = false;
-                                HtmlNode textnode = child.SelectSingleNode(child.XPath + "/td");      
+                                HtmlNode textnode = child.SelectSingleNode(child.XPath + "/td");
+                                StringBuilder sb = new StringBuilder();
                                 if (textnode != null && node == null)
                                 {
                                     check = true;
@@ -382,15 +436,17 @@ namespace AKVN_Backend.Controllers
                                 //Check if textnode is not null, if so, cyclethrough all the childnodes and check they are #text nodes and grab their innertext. 
                                 if (textnode != null)
                                 {
+
                                     foreach (HtmlNode cnode in textnode.ChildNodes)
                                     {
                                         string TextToAdd = "";
                                         if (cnode.Name == "#text")
                                         {
-                                            TextToAdd = cnode.InnerText + "<br>";
-
+                                            string innerText = cnode.InnerHtml;
+                                            innerText = innerText.Replace("<br>", "\n");
+                                            TextToAdd = cnode.InnerText;
                                         }
-                                        text += TextToAdd;
+                                        text += TextToAdd+"\n";
                                     }
                                 }
 
@@ -399,38 +455,39 @@ namespace AKVN_Backend.Controllers
                                 {
                                     string ownername = node.InnerText.Replace("\n", "");
                                     string[] ownerNameArray=ownername.Split(' ');
-                                    bool ownerCheck = _context.Actors.Any(o => o.Name.StartsWith(ownername));
+                                    bool ownerCheck = _context.Actors.Any(o => o.Name==ownername);
+                                    string newOwnerName = ownername;
 
                                     if (ownerCheck)
                                     {
-                                        owner = _context.Actors.Where(o => o.Name.StartsWith(ownername)).First();
+                                        owner = _context.Actors.Where(o => o.Name == ownername).First();
                                     }
                                     else
                                     {
-
-                                        //string oName = "";
-                                        //int i = 0;
-                                        //bool ownerCheck2 = false;
-                                        //while (i < ownerNameArray.Count())
-                                        //{
-
-                                        //    ownerCheck2 = _context.Actors.Any(o => o.Name.StartsWith(oName));
-                                        //    if (ownerCheck2)
-                                        //    {
-                                        //        owner = _context.Actors.Where(o => o.Name.StartsWith(oName)).First();
-                                        //        break;
-
-                                        //    }
-                                        //    oName += " " + ownerNameArray[i];
-                                        //    i++;
-                                        //}
-                                        //if (!ownerCheck2)
-                                        //{
-                                            owner = new Actor(ownername, "");
-                                            _context.Add(owner);
-                                            _context.SaveChanges();
-                                        //}
-
+                                        bool ownerCheck2 = false;
+                                        while (!ownerCheck2)
+                                        {
+                                            string trimmedOwnerName = newOwnerName.Remove(newOwnerName.Length - 1, 1).Trim();
+                                            double lengthCheck = (double)trimmedOwnerName.Length / (double)ownername.Length;
+                                            if (lengthCheck >= 0.5)
+                                            {
+                                                if (_context.Actors.Any(o => o.Name == trimmedOwnerName))
+                                                {
+                                                    owner = _context.Actors.Where(o => o.Name == trimmedOwnerName).First();
+                                                    ownerCheck2 = true;
+                                                }
+                                                else
+                                                {
+                                                    newOwnerName = trimmedOwnerName;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                owner = new Actor(ownername, "");
+                                                AddActor(owner, _context);
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                                 else
@@ -444,11 +501,31 @@ namespace AKVN_Backend.Controllers
                                     //If empty, get the image path.
                                     string imagepath = imageNode.Attributes["href"].Value.ToString();
                                     text = imagepath.Substring(0, imagepath.IndexOf(".png") + ".png".Length);
-                                }else if(imageNode != null && !imageNode.Attributes["href"].Value.ToString().Contains(".png"))
+                                }else if(imageNode != null && !imageNode.Attributes["href"].Value.ToString().Contains(".png") && textnode != null)
                                 {
                                     text = textnode.InnerText;
                                 }
-                                Scenes.Add(new Scene(owner.Name, text,owner.Id));
+                                string[] stringsToBuild = text.Split("\n");
+                                string sceneText = "";
+                                foreach( string s in stringsToBuild)
+                                {
+                                    sb.AppendLine(s);
+                                }
+                                if (!sb.ToString().Contains(".png"))
+                                {
+                                    sceneText = sb.ToString();
+                                }
+                                else
+                                {
+                                    sceneText =text;
+                                }
+                                sceneText = sceneText.Replace("&lt;", "<");
+                                sceneText = sceneText.Replace("&gt;", ">");
+                                sceneText = sceneText.Replace("&#91;", "[");
+                                sceneText = sceneText.Replace("&#93;", "]");
+                                sceneText = sceneText.Replace("&#8212;", "—");
+
+                                Scenes.Add(new Scene(owner.Name, sceneText, owner.Id));
                             }
                         }
                     }
@@ -540,7 +617,8 @@ namespace AKVN_Backend.Controllers
                         if (doc.DocumentNode.SelectSingleNode(fullXPath) != null)
                         {
                             name = doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString();
-                            string webPage = url.Substring(0, url.IndexOf("/wiki") + "/wiki".Length) + "/" + (doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString());
+                            string imageUrl = doc.DocumentNode.SelectSingleNode(fullXPath).Attributes["title"].Value.ToString();
+                            string webPage = url.Substring(0, url.IndexOf("/wiki") + "/wiki".Length) + "/" + imageUrl;
                             imagePath = GetImagePath(webPage);
                         }
                         else //Else just get the innertext of the div as the name of the character.
@@ -558,6 +636,10 @@ namespace AKVN_Backend.Controllers
         }
         static string GetImagePath(string url)
         {
+            if (url.Contains("&#39;"))
+            {
+                url=url.Replace("&#39;", "'");
+            }
             HtmlDocument doc = GetDocument(url);
             string ImagePathFull = doc.DocumentNode.SelectSingleNode("//meta[@property='og:image']").GetAttributeValue("content", null);
             string PngExtention = ".png";
@@ -604,6 +686,36 @@ namespace AKVN_Backend.Controllers
             pythonScript.AppendLine($"define {name}=Character('{name}')");
 
             return pythonScript.ToString();
+        }
+        static int AddActor(Actor actor, AKVNDBContext _context)
+        {
+            if(actor.Name.Contains(" (NPC)"))
+            {
+                actor.Name=actor.Name.Replace(" (NPC)","");
+            }
+            if (actor.Name.Contains(" (enemy)"))
+            {
+                actor.Name = actor.Name.Replace(" (enemy)", "");
+            }
+            if (actor.Name.Contains("'"))
+            {
+                actor.Name = actor.Name.Replace("'", "");
+            }
+            if (actor.Name.Contains("&#39;"))
+            {
+                actor.Name = actor.Name.Replace("&#39;", "");
+            }
+            if (actor.Name.Contains("\""))
+            {
+                actor.Name = actor.Name.Replace("\"", "");
+            }
+            if (!_context.Actors.Any(o => o.Name.StartsWith(actor.Name)))
+            {
+                _context.Add(actor);
+                _context.SaveChanges();
+            }
+            int ActorId = _context.Actors.Where(o => o.Name.Contains(actor.Name)).First().Id;
+            return ActorId;
         }
 
     }

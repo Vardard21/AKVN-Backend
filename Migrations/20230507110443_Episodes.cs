@@ -5,7 +5,7 @@
 namespace AKVN_Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class RationalizeDatabase : Migration
+    public partial class Episodes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -47,7 +47,8 @@ namespace AKVN_Backend.Migrations
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Backgrounds = table.Column<string>(type: "TEXT", nullable: false),
                     Actors = table.Column<string>(type: "TEXT", nullable: false),
-                    SceneList = table.Column<string>(type: "TEXT", nullable: false)
+                    SceneList = table.Column<string>(type: "TEXT", nullable: false),
+                    Episode = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {

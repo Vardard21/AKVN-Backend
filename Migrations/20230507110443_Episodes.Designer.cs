@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AKVN_Backend.Migrations
 {
     [DbContext(typeof(AKVNDBContext))]
-    [Migration("20230504125955_RationalizeDatabase")]
-    partial class RationalizeDatabase
+    [Migration("20230507110443_Episodes")]
+    partial class Episodes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -68,6 +68,10 @@ namespace AKVN_Backend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Backgrounds")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Episode")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
