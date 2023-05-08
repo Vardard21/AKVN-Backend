@@ -322,17 +322,21 @@ namespace AKVN_Backend.Controllers
                 List<CharacterSprite> sprites= new List<CharacterSprite>();
                 foreach (string character in jsonItems.characters)
                 {
-                    if (character.Contains(actor.Name.ToLower()))
+                    if (actor.ShortName != "")
                     {
-                        CharacterSprite characterSprite = new CharacterSprite(character, actor.Name);
-                        sprites.Add(characterSprite);
-                        if (!_context.Sprites.Any(o=>o.Name== characterSprite.Name&&o.ImagePath==characterSprite.ImagePath))
+                        if (character.Contains(actor.ShortName))
                         {
-                            _context.Sprites.Add(characterSprite);
-                            
-                        }
+                            CharacterSprite characterSprite = new CharacterSprite(character, actor.Name);
+                            sprites.Add(characterSprite);
 
-                    }
+                            if (!_context.Sprites.Any(o => o.Name == characterSprite.Name&&o.ImagePath==characterSprite.ImagePath))
+                            {
+                                _context.Sprites.Add(characterSprite);
+
+                            }
+
+                        }
+                    }                                        
                 }
                 spriteList.Add(sprites);
             }
