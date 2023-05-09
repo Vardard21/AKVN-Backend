@@ -15,6 +15,8 @@ using System.Runtime.ExceptionServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using AKVN_Backend.Migrations;
+using System.Collections.Generic;
 
 namespace AKVN_Backend.Controllers
 {
@@ -298,10 +300,10 @@ namespace AKVN_Backend.Controllers
 
 
         [HttpPost("/api/Images/Characters")]
-        public async Task<Response<string>> GetCharacterSprites()
+        public async Task<Response<List<List<CharacterSprite>>>> GetCharacterSprites()
         {
             string aceshipjson = "https://raw.githubusercontent.com/Aceship/AN-EN-Tags/master/json/ace/gallerylist.json";
-            Response<string> response  = new Response<string>();
+            Response<List<List<CharacterSprite>>> response  = new Response<List<List<CharacterSprite>>>();
             List<int> chars= new List<int> {1,2,3,4,5,6,7,8,9,10};
             HttpClient client = new HttpClient();
             Stream stream = await client.GetStreamAsync(aceshipjson);
@@ -316,30 +318,50 @@ namespace AKVN_Backend.Controllers
 
             List<Actor> actors = _context.Actors.ToList();
             List<List<CharacterSprite>>spriteList= new List<List<CharacterSprite>>();
-            
-            foreach (Actor actor in actors)
+
+            //foreach (Actor actor in actors)
+            //{
+            //    List<CharacterSprite> sprites= new List<CharacterSprite>();
+            //    foreach (string character in jsonItems.characters)
+            //    {
+            //        if (actor.ShortName != "")
+            //        {
+            //            if (character.Contains(actor.ShortName))
+            //            {
+            //                CharacterSprite characterSprite = new CharacterSprite(character, actor.Name);
+            //                sprites.Add(characterSprite);
+
+            //                if (!_context.Sprites.Any(o => o.Name == characterSprite.Name&&o.ImagePath==characterSprite.ImagePath))
+            //                {
+            //                    _context.Sprites.Add(characterSprite);
+
+            //                }
+
+            //            }
+            //        }                                        
+            //    }
+            //    spriteList.Add(sprites);
+            //}
+
+            List<CharacterSprite> sprites = new List<CharacterSprite>();
+            foreach (string character in jsonItems.characters)
             {
-                List<CharacterSprite> sprites= new List<CharacterSprite>();
-                foreach (string character in jsonItems.characters)
+
+
+                CharacterSprite characterSprite = new CharacterSprite(character, "");
+                sprites.Add(characterSprite);
+
+                if (!_context.Sprites.Any(o => o.ImagePath == characterSprite.ImagePath))
                 {
-                    if (actor.ShortName != "")
-                    {
-                        if (character.Contains(actor.ShortName))
-                        {
-                            CharacterSprite characterSprite = new CharacterSprite(character, actor.Name);
-                            sprites.Add(characterSprite);
-
-                            if (!_context.Sprites.Any(o => o.Name == characterSprite.Name&&o.ImagePath==characterSprite.ImagePath))
-                            {
-                                _context.Sprites.Add(characterSprite);
-
-                            }
-
-                        }
-                    }                                        
+                    _context.Sprites.Add(characterSprite);
                 }
-                spriteList.Add(sprites);
+
             }
+            spriteList.Add(sprites);
+
+
+            response.Success= true;
+            response.Data = spriteList;
             _context.SaveChanges();
             return response;
         }
