@@ -118,12 +118,12 @@ namespace AKVN_Backend.Controllers
             catch
             {
                 response.RequestError();
-            }            
+            }
             return response;
         }
 
         [HttpGet("/api/Images/Characters")]
-        public async Task<Response<ImageDTO>> DownloadCharacterImages()
+        public Response<ImageDTO> DownloadCharacterImages()
         {
             Response<ImageDTO> response = new Response<ImageDTO>();
             List<Actor> Actors = _context.Actors.Where(a => a.Sprite != "").ToList();
@@ -133,7 +133,7 @@ namespace AKVN_Backend.Controllers
             {
                 urls.Add(actor.Sprite);
             }
-            var returnObj=DownloadImages(urls,@"Data\Images\Characters" ,client);
+            var returnObj = DownloadImages(urls, @"Data\Images\Characters", client);
 
             response.Data.ImagesOld = returnObj.Result.ImagesOld;
             response.Data.ImagesNew = returnObj.Result.ImagesNew;
@@ -141,7 +141,7 @@ namespace AKVN_Backend.Controllers
         }
 
         [HttpGet("/api/Images/Backgrounds")]
-        public async Task<Response<ImageDTO>> DownloadBackgroundImages()
+        public Response<ImageDTO> DownloadBackgroundImages()
         {
             Response<ImageDTO> response = new Response<ImageDTO>();
             List<Background> Backgrounds = _context.Backgrounds.Where(a => a.Sprite != "").ToList();
@@ -159,24 +159,38 @@ namespace AKVN_Backend.Controllers
         }
 
         [HttpGet("/api/Images/Characters/renpy")]
-        public Response<string> CreateRenpyCharacters()
+        public Response<string> CreateRenpyNode()
         {
-            Response<string> response= new Response<string>();
+          Response<string> response = new Response<string>();
+          string nodeName="0-0";
+          string[] nodeActors=_context.Chapters.Where(o=>o.Name==nodeName).Actors.Split(",");
+          List<Actor> actors = new List<Actor>();
+          foreach (string a in nodeActors)
+          {
+            Actor actor = _context.Actors.Where(o=>o.Name==a);
+            actors.Append(actor);
+          }
 
-            List<Actor> actors = _context.Actors.Where(o => o.Name != "").ToList();
-            List<string> actorNames= new List<string>();
-            StringBuilder pythonScript = new StringBuilder();
+          string[] nodeBgs=_context.Chapters.Where(o=>o.Name==nodeName).Backgrounds.Split(",");
+          List<Background>bgs=new List<Background>();
+          foreach (string b in nodeBgs)
+          {
+            Background bg = _context.Backgrounds.Where(o=>o.Name==b);
+            bgs.Append(bg);
+          }
+          
+          StringBuilder pythonScript = new StringBuilder();
 
-            foreach (Actor actor in actors)
-            {
-                pythonScript.AppendLine(CreateRenpyChar(actor));
-            }
+          foreach (Actor actor in actors)
+          {
+              pythonScript.AppendLine(CreateRenpyChar(actor));
+          }
 
-            System.IO.File.WriteAllText(@"Data\charscript.py",pythonScript.ToString());
-            
-            
-            response.Data = "Script generated";
-            return response;
+          System.IO.File.WriteAllText(@"Data\charscript.py", pythonScript.ToString());
+
+
+          response.Data = "Script generated";
+          return response;
 
         }
 
@@ -188,7 +202,7 @@ namespace AKVN_Backend.Controllers
             string storyType = "Story/Main_Theme";
 
             List<List<Chapter>> Episodes = GetChapters(Arknightswiki + storyType);
-            
+
 
 
             foreach (List<Chapter> StoryNodes in Episodes)
@@ -294,7 +308,7 @@ namespace AKVN_Backend.Controllers
 
                 }
             }
-            
+
             return Ok(obj);
         }
 
@@ -303,8 +317,8 @@ namespace AKVN_Backend.Controllers
         public async Task<Response<List<List<CharacterSprite>>>> GetCharacterSprites()
         {
             string aceshipjson = "https://raw.githubusercontent.com/Aceship/AN-EN-Tags/master/json/ace/gallerylist.json";
-            Response<List<List<CharacterSprite>>> response  = new Response<List<List<CharacterSprite>>>();
-            List<int> chars= new List<int> {1,2,3,4,5,6,7,8,9,10};
+            Response<List<List<CharacterSprite>>> response = new Response<List<List<CharacterSprite>>>();
+            List<int> chars = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
             HttpClient client = new HttpClient();
             Stream stream = await client.GetStreamAsync(aceshipjson);
             string jsonFileName = @"Data\aceshipjson.json";
@@ -313,11 +327,11 @@ namespace AKVN_Backend.Controllers
             file.Close();
 
 
-            string jsonData=System.IO.File.ReadAllText(jsonFileName);
+            string jsonData = System.IO.File.ReadAllText(jsonFileName);
             JsonObject jsonItems = JsonConvert.DeserializeObject<JsonObject>(jsonData);
 
             List<Actor> actors = _context.Actors.ToList();
-            List<List<CharacterSprite>>spriteList= new List<List<CharacterSprite>>();
+            List<List<CharacterSprite>> spriteList = new List<List<CharacterSprite>>();
 
             //foreach (Actor actor in actors)
             //{
@@ -360,7 +374,7 @@ namespace AKVN_Backend.Controllers
             spriteList.Add(sprites);
 
 
-            response.Success= true;
+            response.Success = true;
             response.Data = spriteList;
             _context.SaveChanges();
             return response;
@@ -377,7 +391,7 @@ namespace AKVN_Backend.Controllers
         static List<List<Chapter>> GetChapters(string url)
         {
             //Create a list to return
-            List<List<Chapter>> episodes= new List<List<Chapter>>();
+            List<List<Chapter>> episodes = new List<List<Chapter>>();
             List<Chapter> chapters = new List<Chapter>();
 
             //Download the htmlpage to parse
@@ -388,14 +402,14 @@ namespace AKVN_Backend.Controllers
             foreach (HtmlNode episode in Episodes)
             {
                 HtmlNodeCollection StoryNodes = episode.ChildNodes;
-                string episodename= doc.DocumentNode.SelectSingleNode(episode.ParentNode.XPath.ToString() + "/th/div").InnerText.ToString();
+                string episodename = doc.DocumentNode.SelectSingleNode(episode.ParentNode.XPath.ToString() + "/th/div").InnerText.ToString();
 
                 //Cycle through each storynode and make a new chapter object out of it.
                 foreach (HtmlNode storyNode in StoryNodes)
                 {
                     if (storyNode.Name == "a")
                     {
-                        Chapter chapter = new Chapter(storyNode.InnerText,episodename);
+                        Chapter chapter = new Chapter(storyNode.InnerText, episodename);
                         chapters.Add(chapter);
                     }
                 }
@@ -403,7 +417,7 @@ namespace AKVN_Backend.Controllers
             }
             return episodes;
         }
-        static List<Scene> GetScenes(string url, AKVNDBContext _context, string storyNode,HtmlDocument doc)
+        static List<Scene> GetScenes(string url, AKVNDBContext _context, string storyNode, HtmlDocument doc)
         {
             //Create a list to return
             List<Scene> Scenes = new List<Scene>();
@@ -416,7 +430,7 @@ namespace AKVN_Backend.Controllers
             //If no PartNodes exists in the above XPath, Get a new PartNodes variable with the corrected URL and XPath.
             if (PartNodes == null)
             {
-                HtmlDocument doc2 = GetDocument(url.Substring(0,url.IndexOf("/Story")));
+                HtmlDocument doc2 = GetDocument(url.Substring(0, url.IndexOf("/Story")));
                 PartNodes = doc2.DocumentNode.SelectNodes("//*[@class='mrfz-wtable']/tbody");
 
                 PathCheck = true;
@@ -472,7 +486,7 @@ namespace AKVN_Backend.Controllers
                                             innerText = innerText.Replace("<br>", "\n");
                                             TextToAdd = cnode.InnerText;
                                         }
-                                        text += TextToAdd+"\n";
+                                        text += TextToAdd + "\n";
                                     }
                                 }
 
@@ -480,8 +494,8 @@ namespace AKVN_Backend.Controllers
                                 if (check == false && node != null)
                                 {
                                     string ownername = node.InnerText.Replace("\n", "");
-                                    string[] ownerNameArray=ownername.Split(' ');
-                                    bool ownerCheck = _context.Actors.Any(o => o.Name==ownername);
+                                    string[] ownerNameArray = ownername.Split(' ');
+                                    bool ownerCheck = _context.Actors.Any(o => o.Name == ownername);
                                     string newOwnerName = ownername;
 
                                     if (ownerCheck)
@@ -522,18 +536,19 @@ namespace AKVN_Backend.Controllers
                                 }
                                 HtmlNode imageNode = child.SelectSingleNode(child.XPath + "/td/a");
                                 //Check if the innertext is empty
-                                if (imageNode != null&& imageNode.Attributes["href"].Value.ToString().Contains(".png"))
+                                if (imageNode != null && imageNode.Attributes["href"].Value.ToString().Contains(".png"))
                                 {
                                     //If empty, get the image path.
                                     string imagepath = imageNode.Attributes["href"].Value.ToString();
                                     text = imagepath.Substring(0, imagepath.IndexOf(".png") + ".png".Length);
-                                }else if(imageNode != null && !imageNode.Attributes["href"].Value.ToString().Contains(".png") && textnode != null)
+                                }
+                                else if (imageNode != null && !imageNode.Attributes["href"].Value.ToString().Contains(".png") && textnode != null)
                                 {
                                     text = textnode.InnerText;
                                 }
                                 string[] stringsToBuild = text.Split("\n");
                                 string sceneText = "";
-                                foreach( string s in stringsToBuild)
+                                foreach (string s in stringsToBuild)
                                 {
                                     sb.AppendLine(s);
                                 }
@@ -543,7 +558,7 @@ namespace AKVN_Backend.Controllers
                                 }
                                 else
                                 {
-                                    sceneText =text;
+                                    sceneText = text;
                                 }
                                 sceneText = sceneText.Replace("&lt;", "<");
                                 sceneText = sceneText.Replace("&gt;", ">");
@@ -557,7 +572,8 @@ namespace AKVN_Backend.Controllers
                     }
                 }
 
-            }catch (NullReferenceException err)
+            }
+            catch (NullReferenceException err)
             {
                 Console.WriteLine(err.Message);
             }
@@ -567,7 +583,7 @@ namespace AKVN_Backend.Controllers
             }
             return Scenes;
         }
-        static List<Background> GetBackgrounds(string url,HtmlDocument doc)
+        static List<Background> GetBackgrounds(string url, HtmlDocument doc)
         {
 
             //Create a list to return.
@@ -607,9 +623,9 @@ namespace AKVN_Backend.Controllers
             }
             return Backgrounds;
         }
-        static List<Actor> GetActors(string url,HtmlDocument doc)
+        static List<Actor> GetActors(string url, HtmlDocument doc)
         {
- 
+
             //Create response to return.
             List<Actor> Characters = new List<Actor>();
 
@@ -627,7 +643,7 @@ namespace AKVN_Backend.Controllers
                 //Get the table node.
                 HtmlNode CharTable = doc.DocumentNode.SelectSingleNode(XPath);
 
-                
+
                 //Cycle through the childnodes of Chartable and see if its a Div
                 foreach (HtmlNode child in CharTable.ChildNodes)
                 {
@@ -664,7 +680,7 @@ namespace AKVN_Backend.Controllers
         {
             if (url.Contains("&#39;"))
             {
-                url=url.Replace("&#39;", "'");
+                url = url.Replace("&#39;", "'");
             }
             HtmlDocument doc = GetDocument(url);
             string ImagePathFull = doc.DocumentNode.SelectSingleNode("//meta[@property='og:image']").GetAttributeValue("content", null);
@@ -672,10 +688,10 @@ namespace AKVN_Backend.Controllers
             string ImagePath = ImagePathFull.Substring(0, ImagePathFull.IndexOf(PngExtention) + PngExtention.Length);
             return ImagePath;
         }
-        async Task<ImageDTO> DownloadImages(List<string> urls,string imageDirectory,HttpClient client)
+        async Task<ImageDTO> DownloadImages(List<string> urls, string imageDirectory, HttpClient client)
         {
-            List<string>imagesNew= new List<string>();
-            List<string> imagesOld= new List<string>();
+            List<string> imagesNew = new List<string>();
+            List<string> imagesOld = new List<string>();
             ImageDTO returnDTO = new ImageDTO();
             foreach (string url in urls)
             {
@@ -694,15 +710,15 @@ namespace AKVN_Backend.Controllers
                     imagesOld.Add(fileName);
                 }
             }
-            returnDTO.ImagesNew= imagesNew;
-            returnDTO.ImagesOld= imagesOld;
+            returnDTO.ImagesNew = imagesNew;
+            returnDTO.ImagesOld = imagesOld;
             return returnDTO;
-           
+
 
         }
         static string CreateRenpyChar(Actor actor)
         {
-            StringBuilder pythonScript= new StringBuilder();
+            StringBuilder pythonScript = new StringBuilder();
             string name = actor.Name;
             pythonScript.AppendLine($"image {name}Image:");
             pythonScript.Append("    ");
@@ -710,14 +726,38 @@ namespace AKVN_Backend.Controllers
             pythonScript.Append("    ");
             pythonScript.AppendLine("zoom 0.65 ");
             pythonScript.AppendLine($"define {name}=Character('{name}')");
+            return pythonScript.ToString();
+        }
+        static string CreateRenpyBackground(Background background)
+        {
+            StringBuilder pythonScript = new StringBuilder();
+            string name = background.Name;
+            pythonScript.AppendLine($"image bg-{name}:");
+            pythonScript.Append("    ");
+            pythonScript.AppendLine($"'images/Backgrounds/{name}.png' ");
+            return pythonScript.ToString();
+        }
+        static string CreateRenpyDialogue(Scene scene, Background background, Actor actor)
+        {
+            StringBuilder pythonScript = new StringBuilder();
+            string name = actor.Name;
+            string bg = background.Name;
+            string[] dialogue = scene.Dialogue.Split("/r/n/r/n");
+            pythonScript.AppendLine("name");
+            pythonScript.AppendLine("bg");
+
+            foreach (string line in dialogue)
+            {
+                pythonScript.AppendLine(line);
+            }
 
             return pythonScript.ToString();
         }
         static int AddActor(Actor actor, AKVNDBContext _context)
         {
-            if(actor.Name.Contains(" (NPC)"))
+            if (actor.Name.Contains(" (NPC)"))
             {
-                actor.Name=actor.Name.Replace(" (NPC)","");
+                actor.Name = actor.Name.Replace(" (NPC)", "");
             }
             if (actor.Name.Contains(" (enemy)"))
             {
